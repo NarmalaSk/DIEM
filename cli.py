@@ -6,9 +6,8 @@ DEAM CLI - Command Line Interface for Distributed Embeddings & Analytics Manager
 import click
 import json
 import numpy as np
-from DIEM2 import DEAM  # Assuming your DEAM class is in diem.py
+from DIEM import DEAM  
 
-# Initialize DEAM instance
 deam = DEAM()
 
 
