@@ -12,9 +12,9 @@ ColumnStore Engine
 Spider Engine
 
 Together, these enable high-performance, distributed vector management and analytics.
-_____________________________________________________________________________________________________________________________________________________________________________________________
-### Architecture
 
+### Architecture
+_____________________________________________________________________________________________________________________________________________________________________________________________
 DIEM follows a modular and lightweight architecture, deployable on:
 
 A single-node MariaDB instance, or
@@ -23,9 +23,9 @@ A distributed MariaDB cluster
 
 All database interactions are abstracted through DIEM.py, which translates SQL operations into intuitive CLI commands.
 This abstraction eliminates the need for manual SQL query handling, making vector data operations faster and more user-friendly.
-_____________________________________________________________________________________________________________________________________________________________________________________________
-### Authentication
 
+### Authentication
+_____________________________________________________________________________________________________________________________________________________________________________________________
 DIEM uses a config.yaml file for cluster authentication and connection configuration. This enables both local and remote vector management.
 
 Supported connection modes:
@@ -35,9 +35,9 @@ Unix Socket — For local and intra-cluster communication.
 TCP/IP — For remote connections using the host’s IP address.
 
 This flexible authentication model allows seamless integration into existing infrastructure without changing security or connectivity settings.
-_____________________________________________________________________________________________________________________________________________________________________________________________
-### Distributed System
 
+### Distributed System
+_____________________________________________________________________________________________________________________________________________________________________________________________
 DIEM automatically distributes vector data across the cluster using the MariaDB Spider Engine, ensuring:
 
 Horizontal scalability
@@ -47,9 +47,9 @@ Load-balanced queries
 Transparent data retrieval
 
 Using DIEM CLI commands, developers can easily manage data distribution, replication, and query execution across nodes—without manually configuring Spider partitions or routes.
-_____________________________________________________________________________________________________________________________________________________________________________________________
-### Integration in ML Model Development
 
+### Integration in ML Model Development
+_____________________________________________________________________________________________________________________________________________________________________________________________
 DIEM bridges the gap between data storage and machine learning workflows by providing an efficient interface to:
 
 Store and retrieve embeddings generated from ML models.
@@ -59,8 +59,9 @@ Perform semantic search for model evaluation and feature comparison.
 Leverage MariaDB’s ColumnStore for analytics on large-scale vector datasets.
 
 This makes DIEM an ideal choice for teams developing LLM-based applications, recommendation systems, and semantic similarity engines that need scalable, SQL-native vector management.
+
+### CLI 
 _____________________________________________________________________________________________________________________________________________________________________________________________
-### CLI Usage
 ```Usage: cli.py [OPTIONS] COMMAND [ARGS]...
 
   DIEM - Distributed Embeddings & Analytics Manager CLI
