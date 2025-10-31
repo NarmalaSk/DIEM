@@ -1,5 +1,0 @@
-user: "diemuser"
-password: "diempass"
-database: "diemdb"
-socket_path: "/var/run/mysqld/mysqld.sock"
-
