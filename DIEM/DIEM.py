@@ -65,9 +65,8 @@ class DIEM:
       
         sql = f"""
         CREATE TABLE {table_name} (
-        {',\n'.join(column_definitions)}
-        ) ENGINE=InnoDB;
-        """
+        {',n'.join(column_definitions)}
+        ) ENGINE=InnoDB;"""
 
         
         try:
@@ -437,5 +436,37 @@ class DIEM:
             print(f" Error fetching from table: {e}")
             return None
 
+    # List storage Engines
+    def storage_engines(self):
+        """list Storage Engine Installed in MariaDB."""
+        if not self.engine:
+            print("No active Engine.")
+            return
 
+        sql = "SHOW ENGINES;"
+        try:
+            with self.engine.connect() as conn:
+                result = conn.execute(text(sql))
+                engines = [dict(row._mapping) for row in result.fetchall()]
+                print("Available Storage Engines:")
+                for engine in engines:
+                    print(f" - {engine['Engine']}: {engine['Support']}")
+                
+        except Exception as e:
+            print(f"Error verifying Spider engine: {e}")
+
+    def install_storage_engine(self,storage):
+        """Install Storage Engine in MariaDB."""
+        if not self.engine:
+            print("No active Engine.")
+            return
+
+        sql = f"INSTALL SONAME '{storage}';"
+        try:
+            with self.engine.connect() as conn:
+                conn.execute(text(sql))
+                conn.commit()
+                print(f"Storage Engine '{storage}' installed successfully.")
+        except Exception as e:
+            print(f"Error installing Storage Engine '{storage}': {e}")
 
