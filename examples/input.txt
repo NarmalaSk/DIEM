@@ -1,0 +1,80 @@
+python cli.py connect
+
+mariadb://diemuser:diempass@13.127.126.241/diemdb
+
+--------------------------------------
+
+
+name, id , country, sratte, embed
+
+python  cli.py   create_table --table  ankit  --dim 5 --other_columns '{"name" : "VARCHAR(50)", "id" : INT NOT NULL, "country" : "VARCHAR(50)"}'
+
+other_columns --> use to provide the columsn of the CSV following format of SQL syntax
+
+
+
+
+
+
+
+python cli.py update_vector \
+    --table "test_products2" \
+    --where "name = :product_name" \
+    --params '{"product_name": "Blender"}' \
+    --data '{"description": "A powerful new blender", "embedding": [0.9, 0.9, 0.9, 0.9]}'
+
+
+
+python cli.py delete_vectors \
+    --table "test_products2" \
+    --where "name = :product_name" \
+    --params '{"product_name": "Laptop"}'
+
+
+
+
+---------------------
+CREATE TABLE
+
+python cli.py create_table \
+    --table "test_products" \
+    --dim 4 \
+    --other_columns '{"name": "VARCHAR(128)", "description": "TEXT"}' \
+    --primary_key "name" \
+    --distance "euclidean"
+
+
+---------------------------
+INSERT VECTOR
+
+python cli.py insert_vector \
+    --table "test_products" \
+    --data '{"name": "Coffee Grinder", "description": "Grinds beans", "embedding": [0.1, 0.4, 0.2, 0.7]}'
+
+
+----------------------------------
+
+INSERT BATCH FROM CSV
+
+python cli.py insert_batch \
+    --table "test_products" \
+    --file "test_data.csv"
+
+
+------------------------------
+
+SEARCH 
+
+python cli.py search \
+    --table "test_products" \
+    --query_vector "[0.9, 0.1, 0.1, 0.1]" \
+    --distance "euclidean" \
+    --k 2
+
+
+
+python cli.py list_databases
+  628  python cli.py list_databases --pattern "diem%"
+  629  python cli.py list_tables
+  630  python cli.py list_tables --pattern "test_%"
+  631  python cli.py get_all --table "test_products2"
