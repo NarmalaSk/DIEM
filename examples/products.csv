@@ -1,0 +1,11 @@
+name,description,embedding
+Coffee Machine,Built to make the best coffee you can imagine,"[0.3, 0.5, 0.2, 0.1]"
+Smartphone,High-performance smartphone with AI camera,"[0.7, 0.2, 0.4, 0.9]"
+Laptop,Lightweight laptop for professionals,"[0.5, 0.6, 0.7, 0.8]"
+Headphones,Noise-cancelling wireless headphones,"[0.1, 0.4, 0.5, 0.3]"
+Smartwatch,Fitness tracker with heart rate monitor,"[0.9, 0.1, 0.2, 0.4]"
+Espresso Maker,Compact espresso machine for home use,"[0.4, 0.5, 0.3, 0.2]"
+Gaming Console,Next-gen gaming console with 4K graphics,"[0.6, 0.8, 0.5, 0.7]"
+Wireless Mouse,Ergonomic wireless mouse with long battery life,"[0.2, 0.3, 0.4, 0.5]"
+Tablet,Portable tablet for entertainment and work,"[0.8, 0.4, 0.6, 0.5]"
+Bluetooth Speaker,Portable speaker with deep bass and clear sound,"[0.5, 0.7, 0.6, 0.8]"
