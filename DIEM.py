@@ -3,6 +3,7 @@ import csv
 import json
 
 
+
 class DIEM:
     def __init__(self, uri):
         """Initialize SQLAlchemy engine."""
@@ -50,34 +51,55 @@ class DIEM:
         VALUES ({doc_id}, VEC_FromText({embedding}));"""
         print("Vectors Inserted Successfully")
 
+    
 
     def batch_insert_vectors(self, table_name, file_path):
-        """Batch insert vectors from a CSV file into a vector table."""
+        """Batch insert product vectors from a CSV file into a vector table."""
         if not self.engine:
-           print("No active DB engine.")
-           return
+            print("No active DB engine.")
+            return
 
         try:
-            with self.engine.connect() as conn, open(file_path, 'r') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    doc_id = int(row["doc_id"])
-                    embedding = row["embedding"]
+            from sqlalchemy import text 
+            import csv
+            import json
 
-                    embeddingcl = embedding.strip("[]").replace(",", " ")
+            with self.engine.connect() as conn, open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                count = 0
+
+                for row in reader:
+                    name = row["name"].strip()
+                    description = row["description"].strip()
+                    embedding_raw = row["embedding"].strip() 
+
+                    try:
+                        json.loads(embedding_raw)
+                    except json.JSONDecodeError:
+                        print(f"Skipping invalid JSON embedding for product '{name}': {embedding_raw}")
+                        continue
 
                     sql = f"""
-                    INSERT INTO {table_name} (doc_id, embedding)
-                    VALUES ({doc_id}, VEC_FromText('{embeddingcl}'));
+                        INSERT INTO {table_name} (name, description, embedding)
+                        VALUES (:name, :description, VEC_FromText(:embedding));
                     """
-                    conn.execute(text(sql))
 
-                print(f" Successfully inserted vectors from {file_path} into {table_name}.")
-                
+                    conn.execute(
+                        text(sql),
+                        
+                        {"name": name, "description": description, "embedding": embedding_raw}
+                    )
+                    count += 1
+
+                conn.commit()
+                print(f"Successfully inserted {count} vectors from {file_path} into {table_name}.")
 
         except Exception as e:
             print(f"Error inserting vectors: {e}")
-            
+    
+     
+     
+                 
 
 
     def close(self):

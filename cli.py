@@ -37,6 +37,10 @@ def main():
 
     args = parser.parse_args()
 
+    import pymysql
+    pymysql.install_as_MySQLdb()
+
+
     if args.action == "connect":
         uri = input("Enter MariaDB URI: ").strip()
         save_config(uri)
