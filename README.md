@@ -67,18 +67,17 @@ ________________________________________________________________________________
   DIEM - Distributed Embeddings & Analytics Manager CLI
 
 Options:
-  --config TEXT  Path to the database config YAML file.
-  --help         Show this message and exit.
-
-Commands:
-  connect         Connect to MariaDB (TCP/IP or UNIX socket).
-  create-index    Create a vector table / index.
-  delete-vectors  Delete vectors from a table.
-  disconnect      Close active database connection.
-  init-analytics  Initialize analytics ColumnStore table from existing data.
-  insert-vectors  Insert vectors and metadata into a table.
-  list-tables     List all tables in the connected database.
-  run-analytics   Run analytics queries on ColumnStore table.
-  search-vectors  Search for similar vectors in a table.
-  update-vectors  Update vectors or metadata by IDs.```
+  connect          Connect to MariaDB and save the connection URI.
+  create_table     Create a vector table with given dimensions and metadata.
+  insert_vector    Insert a single vector embedding into a table.
+  insert_batch     Insert multiple vector embeddings from a CSV file.
+  search           Perform similarity search on vector embeddings.
+  list_databases   List all databases in the connected MariaDB instance.
+  list_tables      List all tables in the connected database.
+  get_all          Retrieve all rows from a given table.
+  update_vector    Update vector embeddings or metadata using a WHERE clause.
+  delete_vectors   Delete vectors from a table with conditions.
+  delete_table     Drop a vector table permanently.
+  close            Close active database connection and clear config.
+```
 
