@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import sys
-from DIEM import DIEM
+from diem import DIEM
 
 CONFIG_PATH = os.path.expanduser("~/.diem_config")
 db = None
