@@ -12,7 +12,7 @@ Mariadb Db version 11.8 GA Lts (greater or 11.8)
 ### Installation
 Install using pip 
 ```
-pip install diem 
+pip install diemcli
 ```
 Clone git repo
 ```
