@@ -22,7 +22,7 @@ git clone https://github.com/NarmalaSk/DIEM.git
 ### Connect to Mariadb 
 
 ```
-python cli.py connect
+diem connect
 ```
 ##### Enter Connection String
 
