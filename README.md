@@ -15,11 +15,10 @@ Together, these enable high-performance, distributed vector management and analy
 
 ### Architecture
 _____________________________________________________________________________________________________________________________________________________________________________________________
-DIEM follows a modular and lightweight architecture, deployable on:
 
-A single-node MariaDB instance, or
+<img width="602" height="622" alt="Screenshot 2025-11-02 210922" src="https://github.com/user-attachments/assets/7843a925-7e62-4c13-aa55-c71cd2af046d" />
 
-A distributed MariaDB cluster
+
 
 All database interactions are abstracted through DIEM.py, which translates SQL operations into intuitive CLI commands.
 This abstraction eliminates the need for manual SQL query handling, making vector data operations faster and more user-friendly.
