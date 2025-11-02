@@ -29,7 +29,9 @@ diem connect
 
 ### Architecture
 _____________________________________________________________________________________________________________________________________________________________________________________________
-<img width="602" height="622" alt="Screenshot 2025-11-02 210922" src="https://github.com/user-attachments/assets/58323a40-f3b0-4545-b2fc-b96837946ecb" />
+
+
+
 
 
 All database interactions are abstracted through DIEM.py, which translates SQL operations into intuitive CLI commands.
