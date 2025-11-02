@@ -16,7 +16,7 @@ Together, these enable high-performance, distributed vector management and analy
 ### Architecture
 _____________________________________________________________________________________________________________________________________________________________________________________________
 
-<img width="602" height="622" alt="Screenshot 2025-11-02 210922" src="https://github.com/user-attachments/assets/7843a925-7e62-4c13-aa55-c71cd2af046d" />
+
 
 
 
