@@ -30,7 +30,7 @@ git clone https://github.com/NarmalaSk/DIEM.git
 ```
 python cli.py connect
 ```
-Enter Connection String
+###### Enter Connection String
 
 
 ### Architecture
