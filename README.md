@@ -3,13 +3,7 @@
 _____________________________________________________________________________________________________________________________________________________________________________________________
 DIEM is a CLI tool built using Python and the MariaDB SQL connector. It simplifies CRUD operations on vector embeddings and supports semantic search, cosine similarity, and other distance-based analytics.
 
-The system leverages MariaDB 11.8 GA LTS! features such as:
-
-Vector Data Type
-
-Spider Engine
-
-Together, these enable high-performance, distributed vector management and analytics.
+The system leverages MariaDB 11.8 GA LTS! features such as Vector Data Type, Spider Engine .Together, these enable high-performance, distributed vector management and analytics.
 
 ### Prequesites
 
