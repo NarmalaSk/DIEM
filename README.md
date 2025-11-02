@@ -29,11 +29,8 @@ diem connect
 
 ### Architecture
 _____________________________________________________________________________________________________________________________________________________________________________________________
-DIEM follows a modular and lightweight architecture, deployable on:
+<img width="602" height="622" alt="Screenshot 2025-11-02 210922" src="https://github.com/user-attachments/assets/58323a40-f3b0-4545-b2fc-b96837946ecb" />
 
-A single-node MariaDB instance, or
-
-A distributed MariaDB cluster
 
 All database interactions are abstracted through DIEM.py, which translates SQL operations into intuitive CLI commands.
 This abstraction eliminates the need for manual SQL query handling, making vector data operations faster and more user-friendly.
