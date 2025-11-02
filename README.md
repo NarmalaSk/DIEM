@@ -67,8 +67,9 @@ ________________________________________________________________________________
 ```Usage: cli.py [OPTIONS] COMMAND [ARGS]...
 
   DIEM - Distributed Embeddings & Analytics Manager CLI
+Optional Parameters:
 
-Options:
+Arguements:
   connect          Connect to MariaDB and save the connection URI.
   create_table     Create a vector table with given dimensions and metadata.
   insert_vector    Insert a single vector embedding into a table.
