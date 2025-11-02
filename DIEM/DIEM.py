@@ -1,472 +1,274 @@
-import csv
+import argparse
 import json
-from sqlalchemy import create_engine, text, inspect
+import os
+import sys
+from DIEM import DIEM
 
-class DIEM:
-    def __init__(self, uri):
-        """Initialize SQLAlchemy engine."""
-        try:
-            self.engine = create_engine(uri)
-            with self.engine.connect() as conn:
-                print(" Connected to MariaDB successfully.")
-        except Exception as e:
-            print(f" Error connecting to MariaDB: {e}")
-            self.engine = None
+CONFIG_PATH = os.path.expanduser("~/.diem_config")
+db = None
 
+def save_config(uri):
+    with open(CONFIG_PATH, "w") as f:
+        json.dump({"uri": uri}, f)
+
+def load_config():
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, "r") as f:
+            return json.load(f).get("uri")
+    return None
+
+def init_db():
+    """Helper to load config and initialize DB."""
+    global db
+    uri = load_config()
+    if not uri:
+        print("Error: Not connected. Run 'python cli.py connect' first.")
+        return False
     
-    # CREATE TABLE
-    def create_table(self, table_name, vector_dim, 
-                     other_columns=None, 
-                     primary_key=None,
-                     distance_metric="cosine", 
-                     m=8, 
-                     index_name="vec_idx"):
-        
-        if not self.engine:
-            print("No active DB engine.")
-            return
+    if db is None:
+        db = DIEM(uri)
+        if db.engine is None:
+            return False
+    return True
 
- 
-        try:
-            inspector = inspect(self.engine)
-            if inspector.has_table(table_name):
-                print(f"Table '{table_name}' already exists.")
-                return  
-        except Exception as e:
-            print(f"Error checking for table: {e}")
-            return
-        
-        if not table_name.isidentifier():
-            raise ValueError(f"Invalid table name: {table_name}")
-        if not index_name.isidentifier():
-            raise ValueError(f"Invalid index name: {index_name}")
-        if distance_metric.lower() not in ["cosine", "euclidean"]:
-            raise ValueError("Invalid distance metric. Choose 'cosine' or 'euclidean'.")
+def main():
+    global db
 
-        column_definitions = []
-        if other_columns:
-            for col_name, col_type in other_columns.items():
-                if not col_name.isidentifier():
-                    raise ValueError(f"Invalid column name: {col_name}")
-                column_definitions.append(f"    `{col_name}` {col_type}") 
-
-        column_definitions.append(f"    embedding VECTOR({vector_dim}) NOT NULL")
-
-        if primary_key:
-            if not primary_key.isidentifier():
-                 raise ValueError(f"Invalid primary key column name: {primary_key}")
-            if primary_key not in (other_columns or {}):
-                raise ValueError(f"Primary key '{primary_key}' is not defined in 'other_columns'.")
-            
-            column_definitions.append(f"    PRIMARY KEY (`{primary_key}`)") 
-
-        column_definitions.append(f"    VECTOR INDEX `{index_name}` (embedding) M=:m DISTANCE={distance_metric.upper()}")
-
-      
-        sql = f"""
-        CREATE TABLE {table_name} (
-        {',n'.join(column_definitions)}
-        ) ENGINE=InnoDB;"""
-
-        
-        try:
-            with self.engine.connect() as conn:
-                conn.execute(text(sql), {"m": m})
-                conn.commit()
-            # MODIFIED: Print a specific "created" message
-            print(f"Table '{table_name}' created successfully.")
-        except Exception as e:
-            # This will now only catch actual errors
-            print(f"Error creating table: {e}")
-
+    parser = argparse.ArgumentParser(description="DIEM CLI - Manage Vector Tables in MariaDB")
+    parser.add_argument(
+        "action",
+        choices=["connect", "create_table", "close", "insert_vector", 
+                 "insert_batch", "search", "list_databases", 
+                 "list_tables", "get_all", "delete_vectors",
+                 "update_vector", "delete_table" , "help"],
+        help="Action to perform"
+    )
     
-    # INSERT
-    def insert_vector(self, table_name, data):
-        
-        if not self.engine:
-            print(" No active DB engine.")
-            return
-
-        if not table_name.isidentifier():
-            print(f"Error: Invalid table name '{table_name}'.")
-            return
-        if 'embedding' not in data:
-            print("Error: 'data' dictionary must contain an 'embedding' key.")
-            return
-
-        params = data.copy()
-        try:
-            params['embedding'] = json.dumps(params['embedding'])
-        except TypeError as e:
-            print(f"Error: 'embedding' value must be a JSON-serializable list. {e}")
-            return
-
-        columns = []
-        value_placeholders = []
-        for col_name in params.keys():
-            if not col_name.isidentifier():
-                print(f"Error: Invalid column name '{col_name}'.")
-                return
-            
-            columns.append(col_name)
-            if col_name == 'embedding':
-                value_placeholders.append("VEC_FromText(:embedding)")
-            else:
-                value_placeholders.append(f":{col_name}")
-
-        columns_sql = ", ".join(columns)
-        values_sql = ", ".join(value_placeholders)
-
-        sql = f"INSERT INTO {table_name} ({columns_sql}) VALUES ({values_sql});"
-
-        try:
-            with self.engine.connect() as conn:
-                conn.execute(text(sql), params)
-                conn.commit()
-            print(f"Successfully inserted 1 row into {table_name}.")
-        except Exception as e:
-            print(f"Error inserting vector: {e}")
-
+    # Args for update/delete
+    parser.add_argument("--where", help="SQL WHERE clause (e.g., \"name = :key\")")
+    parser.add_argument("--params", help="JSON string of WHERE parameters (e.g., '{\"key\": \"value\"}')")
     
-    # BATCH INSERT FROM CSV
-    def batch_insert_vectors(self, table_name, file_path):
-        
-        if not self.engine:
-            print("No active DB engine.")
-            return
+    # filters
+    parser.add_argument("--pattern", help="LIKE pattern for listing (e.g., 'test_%')")
 
-        try:
-            with self.engine.connect() as conn, open(file_path, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                
-                if not reader.fieldnames:
-                    print(f"Error: CSV file '{file_path}' is empty or invalid.")
-                    return
-                
-                if 'embedding' not in reader.fieldnames:
-                    print(f"Error: CSV file must have an 'embedding' column.")
-                    return
+    # General args
+    parser.add_argument("--table", help="Table name for the action")
 
+    # create_table args
+    parser.add_argument("--dim", type=int, help="Vector dimension (e.g., 1536)")
+    parser.add_argument("--other_columns", help="JSON string of other columns (e.g., '{\"name\": \"VARCHAR(128)\"}' )")
+    parser.add_argument("--primary_key", help="Name of the primary key column")
+    parser.add_argument("--distance", default="cosine", help="Distance metric: cosine or euclidean")
+    parser.add_argument("--m", type=int, default=8, help="HNSW parameter M (default: 8)")
 
-                columns = [col for col in reader.fieldnames if col.isidentifier()]
-                other_cols = [col for col in columns if col != 'embedding']
-                
-                placeholders = []
-                for col in columns:
-                    if col == 'embedding':
-                        placeholders.append("VEC_FromText(:embedding)")
-                    else:
-                        placeholders.append(f":{col}")
-                
-                columns_sql = ", ".join(columns)
-                values_sql = ", ".join(placeholders)
-                
-                sql = f"""
-                    INSERT INTO {table_name} ({columns_sql})
-                    VALUES ({values_sql});
-                """
-                sql_statement = text(sql)
-                
-                count = 0
-                transaction = conn.begin()
-                try:
-                    for row in reader:
-                        params = {col: row[col] for col in columns}
-                        
-                        try:
-                            json.loads(params['embedding'])
-                        except json.JSONDecodeError:
-                            print(f"Skipping invalid JSON embedding in row: {row}")
-                            continue
-                        
-                        conn.execute(sql_statement, params)
-                        count += 1
-                    
-                    transaction.commit()
-                    print(f"Successfully inserted {count} vectors from {file_path} into {table_name}.")
-                
-                except Exception as e:
-                    transaction.rollback()
-                    print(f"Error during batch insert (rolled back): {e}")
+    # insert_vector args
+    parser.add_argument("--data", help="JSON string of the row to insert (e.g., '{\"name\": \"Item\", \"embedding\": [0.1, 0.2]}' )")
 
-        except FileNotFoundError:
-            print(f"Error: File not found at '{file_path}'")
-        except Exception as e:
-            print(f"Error inserting vectors: {e}")
+    # insert_batch args
+    parser.add_argument("--file", help="Path to CSV file for batch insertion")
 
-    
-    
-    # SEARCH
-    def similarity_search(self, table_name, query_vector, distance_metric, top_k=5):
-        
-        if not self.engine:
-            print(" No active DB engine.")
-            return None
-
-        dist_sql = ""
-
-        if distance_metric.lower() == 'cosine':
-            dist_sql = "VEC_DISTANCE_COSINE(embedding, VEC_FromText(:query_vec))"
-        
-        elif distance_metric.lower() == 'euclidean':
-            dist_sql = "VEC_DISTANCE_EUCLIDEAN(embedding, VEC_FromText(:query_vec))"
-        
-        else:
-            print("Error: Invalid distance metric. Choose 'cosine' or 'euclidean'.")
-            return None
-
-        
-        try:
-            query_vec_json = json.dumps(query_vector)
-        except TypeError as e:
-            print(f"Error: 'query_vector' must be a JSON-serializable list. {e}")
-            return None
-            
-        sql = f"""
-            SELECT *,
-                   {dist_sql} AS distance
-            FROM {table_name}
-            ORDER BY distance ASC
-            LIMIT :top_k;
-        """
-        
-       
-        try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text(sql), {
-                    "query_vec": query_vec_json,
-                    "top_k": top_k
-                })
-                
-                rows = [dict(row._mapping) for row in result.fetchall()]
-                
-                for row in rows:
-                    if 'embedding' in row:
-                        row['embedding'] = str(row['embedding'])
-                
-                return rows
-                
-        except Exception as e:
-            print(f"Error during similarity search: {e}")
-            return None
-
-
-    # DELETE VECTOR
-    def delete_vectors(self, table_name, where_clause, params=None):
-        
-        if not self.engine:
-            print("No active DB engine.")
-            return False
-        if not table_name.isidentifier():
-            print(f"Error: Invalid table name '{table_name}'.")
-            return False
-        if not where_clause:
-            print("Error: A WHERE clause is required to prevent accidental mass deletion.")
-            return False
-
-        sql = f"DELETE FROM {table_name} WHERE {where_clause};"
-        
-        try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text(sql), params or {})
-                conn.commit()
-                print(f"Successfully deleted {result.rowcount} row(s) from {table_name}.")
-                return True
-        except Exception as e:
-            print(f"Error deleting vectors: {e}")
-            return False
-
-    # UPDATE VECTOR
-    def update_vector(self, table_name, data, where_clause, params=None):
-        
-        if not self.engine:
-            print("No active DB engine.")
-            return False
-        if not table_name.isidentifier():
-            print(f"Error: Invalid table name '{table_name}'.")
-            return False
-        if not where_clause:
-            print("Error: A WHERE clause is required to prevent accidental mass update.")
-            return False
-        if not data:
-            print("Error: No data provided to update.")
-            return False
-
+    # search args
+    parser.add_argument("--query_vector", help="JSON string of the query vector (e.g., '[0.1, 0.2, 0.3]' )")
+    parser.add_argument("--k", type=int, default=5, help="Number of results to return (default: 5)")
    
-        set_params = {}
-        set_expressions = []
 
-        for col_name, value in data.items():
-            if not col_name.isidentifier():
-                print(f"Error: Invalid column name '{col_name}'.")
-                return False
-            
-            param_name = f"set_{col_name}" 
-            
-            if col_name == 'embedding':
-                set_expressions.append(f"embedding = VEC_FromText(:{param_name})")
-                try:
-                    set_params[param_name] = json.dumps(value)
-                except TypeError:
-                    print(f"Error: 'embedding' value must be a JSON-serializable list.")
-                    return False
-            else:
-                set_expressions.append(f"{col_name} = :{param_name}")
-                set_params[param_name] = value
-
-        set_sql = ", ".join(set_expressions)
-        sql = f"UPDATE {table_name} SET {set_sql} WHERE {where_clause};"
-        
-        
-        final_params = set_params.copy()
-        final_params.update(params or {})
-
-        try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text(sql), final_params)
-                conn.commit()
-                if result.rowcount == 0:
-                    print(f"⚠️ Warning: Update ran but 0 rows matched the WHERE clause in {table_name}.")
-                else:
-                    print(f"Successfully updated {result.rowcount} row(s) in {table_name}.")
-                return True
-        except Exception as e:
-            print(f"Error updating vector: {e}")
-            return False
-
-    # DELETE TABLE
-    def delete_table(self, table_name):
-        """
-        Deletes (drops) an entire table. This is permanent.
-        """
-        if not self.engine:
-            print("No active DB engine.")
-            return False
-        if not table_name.isidentifier():
-            print(f"Error: Invalid table name '{table_name}'.")
-            return False
-
-        # Get user confirmation from the command line
-        confirm = input(f"Are you sure you want to permanently delete the table '{table_name}'? (yes/no): ")
-        if confirm.lower() != 'yes':
-            print("Aborted. Table was not deleted.")
-            return False
-
-        sql = f"DROP TABLE IF EXISTS {table_name};"
-        
-        try:
-            with self.engine.connect() as conn:
-                conn.execute(text(sql))
-                conn.commit()
-            print(f"Successfully deleted table '{table_name}'.")
-            return True
-        except Exception as e:
-            print(f"Error deleting table: {e}")
-            return False
-
+    args = parser.parse_args()
 
     
-    # LIST DATABASE
-    def list_databases(self, like_pattern=None):
-        """Lists databases on the server."""
-        if not self.engine:
-            print(" No active DB engine.")
-            return None
+    try:
+        import pymysql
+        pymysql.install_as_MySQLdb()
+    except ImportError:
+        print("pymysql not found. Please run 'pip install pymysql'.")
         
-        sql = "SHOW DATABASES"
-        params = {}
-        if like_pattern:
-            sql += " LIKE :pattern"
-            params = {"pattern": like_pattern}
+
+
+    if args.action == "connect":
+        uri = input("Enter MariaDB URI (mariadb://user:pass@host/db): ").strip()
+        save_config(uri)
+        db = DIEM(uri)
+
+    elif args.action == "create_table":
+        if not init_db(): return
+        if not args.table or not args.dim:
+            print("Error: --table and --dim are required.")
+            return
         
-        try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text(sql), params)
-                return [row[0] for row in result.fetchall()]
-        except Exception as e:
-            print(f" Error listing databases: {e}")
-            return None
-
-    
-    # LIST TABLES
-    def list_tables(self, like_pattern=None):
-        """Lists tables in the currently connected database."""
-        if not self.engine:
-            print(" No active DB engine.")
-            return None
-
-        sql = "SHOW TABLES"
-        params = {}
-        if like_pattern:
-            sql += " LIKE :pattern"
-            params = {"pattern": like_pattern}
-
-        try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text(sql), params)
-                return [row[0] for row in result.fetchall()]
-        except Exception as e:
-            print(f" Error listing tables: {e}")
-            return None
-
-    
-    # GET
-    def get_all_from_table(self, table_name):
-        """Fetches all rows and vectors from a specific table."""
-        if not self.engine:
-            print(" No active DB engine.")
-            return None
-        if not table_name.isidentifier():
-            print(f" Error: Invalid table name '{table_name}'.")
-            return None
-        
-        sql = f"SELECT * FROM {table_name};" 
-        
-        try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text(sql))
-                rows = [dict(row._mapping) for row in result.fetchall()]
+        other_columns_dict = None
+        if args.other_columns:
+            try:
+                other_columns_dict = json.loads(args.other_columns)
+            except json.JSONDecodeError:
+                print(f"Error: Invalid JSON in --other_columns: {args.other_columns}")
+                return
                 
-                
-                for row in rows:
-                    if 'embedding' in row:
-                        row['embedding'] = str(row['embedding'])
-                return rows
-        except Exception as e:
-            print(f" Error fetching from table: {e}")
-            return None
+        db.create_table(
+            table_name=args.table,
+            vector_dim=args.dim,
+            other_columns=other_columns_dict,
+            primary_key=args.primary_key,
+            distance_metric=args.distance,
+            m=args.m
+        )
 
-    # List storage Engines
-    def storage_engines(self):
-        """list Storage Engine Installed in MariaDB."""
-        if not self.engine:
-            print("No active Engine.")
+    elif args.action == "insert_vector":
+        if not init_db(): return
+        if not args.table or not args.data:
+            print("Error: --table and --data are required.")
             return
 
-        sql = "SHOW ENGINES;"
+        data_dict = None
         try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text(sql))
-                engines = [dict(row._mapping) for row in result.fetchall()]
-                print("Available Storage Engines:")
-                for engine in engines:
-                    print(f" - {engine['Engine']}: {engine['Support']}")
-                
-        except Exception as e:
-            print(f"Error verifying Spider engine: {e}")
+            data_dict = json.loads(args.data)
+        except json.JSONDecodeError:
+            print(f"Error: Invalid JSON in --data: {args.data}")
+            return
+            
+        db.insert_vector(args.table, data_dict)
 
-    def install_storage_engine(self,storage):
-        """Install Storage Engine in MariaDB."""
-        if not self.engine:
-            print("No active Engine.")
+    elif args.action == "insert_batch":
+        if not init_db(): return
+        if not args.table or not args.file:
+            print("Error: --table and --file are required.")
+            return
+        db.batch_insert_vectors(args.table, args.file)
+
+    elif args.action == "search":
+        if not init_db(): return
+        if not args.table or not args.query_vector:
+            print("Error: --table and --query_vector are required.")
+            return
+        
+        query_vector_list = None
+        try:
+            query_vector_list = json.loads(args.query_vector)
+        except json.JSONDecodeError:
+            print(f" Error: Invalid JSON in --query_vector: {args.query_vector}")
+            return
+            
+        results = db.similarity_search(
+            table_name=args.table,
+            query_vector=query_vector_list,
+            distance_metric=args.distance,
+            top_k=args.k
+        )
+        
+        if results:
+            print(f"Found {len(results)} results:")
+            print(json.dumps(results, indent=2))
+
+    elif args.action == "delete_vectors":
+        if not init_db(): return
+        if not args.table or not args.where:
+            print("Error: --table and --where are required for safety.")
+            return
+        
+        where_params = {}
+        if args.params:
+            try:
+                where_params = json.loads(args.params)
+            except json.JSONDecodeError:
+                print(f"Error: Invalid JSON in --params: {args.params}")
+                return
+        
+        db.delete_vectors(args.table, args.where, where_params)
+
+    elif args.action == "update_vector":
+        if not init_db(): return
+        if not args.table or not args.where or not args.data:
+            print("Error: --table, --where, and --data are required.")
+            return
+        
+        data_dict = {}
+        try:
+            data_dict = json.loads(args.data)
+        except json.JSONDecodeError:
+            print(f"Error: Invalid JSON in --data: {args.data}")
             return
 
-        sql = f"INSTALL SONAME '{storage}';"
-        try:
-            with self.engine.connect() as conn:
-                conn.execute(text(sql))
-                conn.commit()
-                print(f"Storage Engine '{storage}' installed successfully.")
-        except Exception as e:
-            print(f"Error installing Storage Engine '{storage}': {e}")
+        where_params = {}
+        if args.params:
+            try:
+                where_params = json.loads(args.params)
+            except json.JSONDecodeError:
+                print(f"Error: Invalid JSON in --params: {args.params}")
+                return
+        
+        db.update_vector(args.table, data_dict, args.where, where_params)
 
+    elif args.action == "delete_table":
+        if not init_db(): return
+        if not args.table:
+            print("Error: --table is required.")
+            return
+        
+        db.delete_table(args.table)
+
+
+
+    elif args.action == "list_databases":
+        if not init_db(): return
+        databases = db.list_databases(args.pattern)
+        if databases is not None:
+            print(f"Found {len(databases)} databases:")
+            for db_name in databases:
+                print(f"- {db_name}")
+
+    elif args.action == "list_tables":
+        if not init_db(): return
+        tables = db.list_tables(args.pattern)
+        if tables is not None:
+            print(f"Found {len(tables)} tables in current database:")
+            for table_name in tables:
+                print(f"- {table_name}")
+
+    elif args.action == "get_all":
+        if not init_db(): return
+        if not args.table:
+            print(" Error: --table is required.")
+            return
+        
+        rows = db.get_all_from_table(args.table)
+        if rows:
+            print(f"Found {len(rows)} rows in '{args.table}':")
+            print(json.dumps(rows, indent=2))
+    
+    elif args.action == "close":
+        uri = load_config()
+        if not uri:
+            print("No active connection found to close.")
+        else:
+            if os.path.exists(CONFIG_PATH):
+                os.remove(CONFIG_PATH)
+            print("Connection configuration cleared.")
+        
+        if db:
+            db.close()
+
+
+    elif args.action == "help":
+         print("""
+DIEM - Distributed Embeddings & Analytics Manager CLI
+
+Options:
+  --help         Show this message and exit.
+
+Commands:
+  connect          Connect to MariaDB and save the connection URI.
+  create_table     Create a vector table with given dimensions and metadata.
+  insert_vector    Insert a single vector embedding into a table.
+  insert_batch     Insert multiple vector embeddings from a CSV file.
+  search           Perform similarity search on vector embeddings.
+  list_databases   List all databases in the connected MariaDB instance.
+  list_tables      List all tables in the connected database.
+  get_all          Retrieve all rows from a given table.
+  update_vector    Update vector embeddings or metadata using a WHERE clause.
+  delete_vectors   Delete vectors from a table with conditions.
+  delete_table     Drop a vector table permanently.
+  close            Close active database connection and clear config.
+""")
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
