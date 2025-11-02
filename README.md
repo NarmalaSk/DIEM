@@ -13,7 +13,7 @@ Together, these enable high-performance, distributed vector management and analy
 
 ### Prequesites
 
-Mariadb Db version 11.8 GA > 
+Mariadb Db version 11.8 GA Lts (greater or 11.8)
 
 ### Installation
 Install using pip 
