@@ -9,8 +9,8 @@ description = "Distributed Embeddings & Analytics Manager (DIEM) CLI for MariaDB
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-  { name = "Shashi Kumar", email = "shashinarmala29@gmail.com",
-    name = "Ankit Vishwakarma" , email = "ankit.vishwakarma.devops@gmail.com" }
+  { name = "Shashi Kumar", email = "shashinarmala29@gmail.com" },
+  { name = "Ankit Vishwakarma", email = "ankit.vishwakarma.devops@gmail.com" }
 ]
 requires-python = ">=3.8"
 dependencies = [
