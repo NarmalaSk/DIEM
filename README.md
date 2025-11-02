@@ -44,19 +44,6 @@ A distributed MariaDB cluster
 All database interactions are abstracted through DIEM.py, which translates SQL operations into intuitive CLI commands.
 This abstraction eliminates the need for manual SQL query handling, making vector data operations faster and more user-friendly.
 
-### Authentication
-_____________________________________________________________________________________________________________________________________________________________________________________________
-DIEM uses a config.yaml file for cluster authentication and connection configuration. This enables both local and remote vector management.
-
-Supported connection modes:
-
-Unix Socket — For local and intra-cluster communication.
-
-TCP/IP — For remote connections using the host’s IP address.
-
-This flexible authentication model allows seamless integration into existing infrastructure without changing security or connectivity settings.
-
-
 
 ### Distributed System
 _____________________________________________________________________________________________________________________________________________________________________________________________
