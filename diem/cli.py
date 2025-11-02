@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import sys
-from DIEM import DIEM
+from diem import DIEM
 
 CONFIG_PATH = os.path.expanduser("~/.diem_config")
 db = None
@@ -40,7 +40,7 @@ def main():
         choices=["connect", "create_table", "close", "insert_vector", 
                  "insert_batch", "search", "list_databases", 
                  "list_tables", "get_all", "delete_vectors",
-                 "update_vector", "delete_table"],
+                 "update_vector", "delete_table" , "help"],
         help="Action to perform"
     )
     
@@ -70,7 +70,7 @@ def main():
     # search args
     parser.add_argument("--query_vector", help="JSON string of the query vector (e.g., '[0.1, 0.2, 0.3]' )")
     parser.add_argument("--k", type=int, default=5, help="Number of results to return (default: 5)")
-
+   
 
     args = parser.parse_args()
 
@@ -244,6 +244,31 @@ def main():
         
         if db:
             db.close()
+
+
+    elif args.action == "help":
+         print("""
+DIEM - Distributed Embeddings & Analytics Manager CLI
+
+Options:
+  --help         Show this message and exit.
+
+Commands:
+  connect          Connect to MariaDB and save the connection URI.
+  create_table     Create a vector table with given dimensions and metadata.
+  insert_vector    Insert a single vector embedding into a table.
+  insert_batch     Insert multiple vector embeddings from a CSV file.
+  search           Perform similarity search on vector embeddings.
+  list_databases   List all databases in the connected MariaDB instance.
+  list_tables      List all tables in the connected database.
+  get_all          Retrieve all rows from a given table.
+  update_vector    Update vector embeddings or metadata using a WHERE clause.
+  delete_vectors   Delete vectors from a table with conditions.
+  delete_table     Drop a vector table permanently.
+  close            Close active database connection and clear config.
+""")
+    sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

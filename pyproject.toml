@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "diem-cli"
+version = "0.1.0"
+description = "Distributed Embeddings & Analytics Manager (DIEM) CLI for MariaDB Vector Engine"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "Shashi Kumar", email = "shashinarmala29@gmail.com",
+    name = "Ankit Vishwakarma" , email = "ankit.vishwakarma.devops@gmail.com" }
+]
+requires-python = ">=3.8"
+dependencies = [
+  "SQLAlchemy>=2.0",
+  "PyMySQL>=1.1.0"
+]
+
+[project.scripts]
+diem = "diem.cli:main"

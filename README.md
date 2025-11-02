@@ -3,15 +3,29 @@
 _____________________________________________________________________________________________________________________________________________________________________________________________
 DIEM is a CLI tool built using Python and the MariaDB SQL connector. It simplifies CRUD operations on vector embeddings and supports semantic search, cosine similarity, and other distance-based analytics.
 
-The system leverages MariaDB 11.8 LTS features such as:
+The system leverages MariaDB 11.8 GA LTS! features such as Vector Data Type, Spider Engine .Together, these enable high-performance, distributed vector management and analytics.
 
-Vector Data Type
+### Prequesites
 
-ColumnStore Engine
+Mariadb Db version 11.8 GA Lts (greater or 11.8)
 
-Spider Engine
+### Installation
+Install using pip 
+```
+pip install diemcli
+```
+Clone git repo
+```
+git clone https://github.com/NarmalaSk/DIEM.git
+```
 
-Together, these enable high-performance, distributed vector management and analytics.
+### Connect to Mariadb 
+
+```
+diem connect
+```
+##### Enter Connection String
+
 
 ### Architecture
 _____________________________________________________________________________________________________________________________________________________________________________________________
@@ -23,17 +37,6 @@ ________________________________________________________________________________
 All database interactions are abstracted through DIEM.py, which translates SQL operations into intuitive CLI commands.
 This abstraction eliminates the need for manual SQL query handling, making vector data operations faster and more user-friendly.
 
-### Authentication
-_____________________________________________________________________________________________________________________________________________________________________________________________
-DIEM uses a config.yaml file for cluster authentication and connection configuration. This enables both local and remote vector management.
-
-Supported connection modes:
-
-Unix Socket — For local and intra-cluster communication.
-
-TCP/IP — For remote connections using the host’s IP address.
-
-This flexible authentication model allows seamless integration into existing infrastructure without changing security or connectivity settings.
 
 ### Distributed System
 _____________________________________________________________________________________________________________________________________________________________________________________________
@@ -66,18 +69,17 @@ ________________________________________________________________________________
   DIEM - Distributed Embeddings & Analytics Manager CLI
 
 Options:
-  --config TEXT  Path to the database config YAML file.
-  --help         Show this message and exit.
-
-Commands:
-  connect         Connect to MariaDB (TCP/IP or UNIX socket).
-  create-index    Create a vector table / index.
-  delete-vectors  Delete vectors from a table.
-  disconnect      Close active database connection.
-  init-analytics  Initialize analytics ColumnStore table from existing data.
-  insert-vectors  Insert vectors and metadata into a table.
-  list-tables     List all tables in the connected database.
-  run-analytics   Run analytics queries on ColumnStore table.
-  search-vectors  Search for similar vectors in a table.
-  update-vectors  Update vectors or metadata by IDs.```
+  connect          Connect to MariaDB and save the connection URI.
+  create_table     Create a vector table with given dimensions and metadata.
+  insert_vector    Insert a single vector embedding into a table.
+  insert_batch     Insert multiple vector embeddings from a CSV file.
+  search           Perform similarity search on vector embeddings.
+  list_databases   List all databases in the connected MariaDB instance.
+  list_tables      List all tables in the connected database.
+  get_all          Retrieve all rows from a given table.
+  update_vector    Update vector embeddings or metadata using a WHERE clause.
+  delete_vectors   Delete vectors from a table with conditions.
+  delete_table     Drop a vector table permanently.
+  close            Close active database connection and clear config.
+```
 
